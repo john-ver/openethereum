@@ -1,10 +1,6 @@
-# apM Reward Chain
+# OpenEthereum
 
-Blockchain for business for on-chain to off-chain reward transfers and secure records
-
-Permissioned services are obtained by bridging APMs on the Ethereum mainnet to RAPMs (the same concept as ETH on Ethereum), which can be utilized as gas to record and bridge key information.
-
-Since APMs are fixed assets that are no longer being issued, the Ethereum used to record them is stuck on the mainnet and out of circulation for a period of time.
+Fast and feature-rich multi-network Ethereum client.
 
 [» Download the latest release «](https://github.com/openethereum/openethereum/releases/latest)
 

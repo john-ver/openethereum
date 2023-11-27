@@ -1,3 +1,7 @@
+## OpenEthereum v3.3.6
+Enhancements:
+* Support for apM Reward Chain
+
 ## OpenEthereum v3.3.5
 
 Enhancements:

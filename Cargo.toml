@@ -1,6 +1,6 @@
 [package]
 description = "apM Reward Chain"
-name = "apm-reward-chain"
+name = "apm reward chain"
 # NOTE Make sure to update util/version/Cargo.toml as well
 version = "3.3.6"
 license = "GPL-3.0"

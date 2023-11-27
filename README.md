@@ -6,7 +6,6 @@ Permissioned services are obtained by bridging APMs on the Ethereum mainnet to R
 
 Since APMs are fixed assets that are no longer being issued, the Ethereum used to record them is stuck on the mainnet and out of circulation for a period of time.
 
-
 [» Download the latest release «](https://github.com/openethereum/openethereum/releases/latest)
 
 [![GPL licensed][license-badge]][license-url]

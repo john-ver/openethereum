@@ -1,8 +1,8 @@
 [package]
-description = "OpenEthereum"
-name = "openethereum"
+description = "OpenEthereum based RAPM Mainnet"
+name = "apM Reward Chain"
 # NOTE Make sure to update util/version/Cargo.toml as well
-version = "3.3.5"
+version = "3.3.6"
 license = "GPL-3.0"
 authors = [
 	"OpenEthereum developers",

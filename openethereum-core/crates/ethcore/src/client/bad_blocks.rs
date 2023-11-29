@@ -21,7 +21,6 @@ use ethereum_types::H256;
 use itertools::Itertools;
 use memory_cache::MemoryLruCache;
 use parking_lot::RwLock;
-use types::BlockNumber;
 use verification::queue::kind::blocks::Unverified;
 
 /// Recently seen bad blocks.
@@ -39,8 +38,8 @@ impl Default for BadBlocks {
 
 impl BadBlocks {
     /// Reports given RLP as invalid block.
-    pub fn report(&self, raw: Bytes, message: String, eip1559_transition: BlockNumber) {
-        match Unverified::from_rlp(raw, eip1559_transition) {
+    pub fn report(&self, raw: Bytes, message: String) {
+        match Unverified::from_rlp(raw) {
             Ok(unverified) => {
                 error!(
                     target: "client",
@@ -70,14 +69,14 @@ impl BadBlocks {
     }
 
     /// Returns a list of recently detected bad blocks with error descriptions.
-    pub fn bad_blocks(&self, eip1559_transition: BlockNumber) -> Vec<(Unverified, String)> {
+    pub fn bad_blocks(&self) -> Vec<(Unverified, String)> {
         self.last_blocks
             .read()
             .backstore()
             .iter()
             .map(|(_k, (unverified, message))| {
                 (
-                    Unverified::from_rlp(unverified.bytes.clone(), eip1559_transition)
+                    Unverified::from_rlp(unverified.bytes.clone())
                         .expect("Bytes coming from UnverifiedBlock so decodable; qed"),
                     message.clone(),
                 )

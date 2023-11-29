@@ -92,8 +92,6 @@ pub enum Error {
     BuiltIn(&'static str),
     /// When execution tries to modify the state in static context
     MutableCallInStaticContext,
-    /// Invalid code to deploy as a contract
-    InvalidCode,
     /// Likely to cause consensus issues.
     Internal(String),
     /// Wasm runtime error
@@ -147,7 +145,6 @@ impl fmt::Display for Error {
             BuiltIn(name) => write!(f, "Built-in failed: {}", name),
             Internal(ref msg) => write!(f, "Internal error: {}", msg),
             MutableCallInStaticContext => write!(f, "Mutable call in static context"),
-            InvalidCode => write!(f, "Invalid code to deploy as a contract"),
             Wasm(ref msg) => write!(f, "Internal error: {}", msg),
             OutOfBounds => write!(f, "Out of bounds"),
             Reverted => write!(f, "Reverted"),

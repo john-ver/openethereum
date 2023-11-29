@@ -51,8 +51,6 @@ pub struct Genesis {
     pub gas_used: Option<Uint>,
     /// Extra data.
     pub extra_data: Option<Bytes>,
-    /// Base fee.
-    pub base_fee_per_gas: Option<Uint>,
 }
 
 #[cfg(test)]
@@ -124,7 +122,6 @@ mod tests {
                     )
                     .unwrap()
                 ),
-                base_fee_per_gas: None,
             }
         );
     }

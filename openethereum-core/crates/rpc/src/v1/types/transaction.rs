@@ -51,9 +51,6 @@ pub struct Transaction {
     pub value: U256,
     /// Gas Price
     pub gas_price: U256,
-    /// Max fee per gas
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub max_fee_per_gas: Option<U256>,
     /// Gas
     pub gas: U256,
     /// Data
@@ -80,9 +77,6 @@ pub struct Transaction {
     /// optional access list
     #[serde(skip_serializing_if = "Option::is_none")]
     pub access_list: Option<AccessList>,
-    /// miner bribe
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub max_priority_fee_per_gas: Option<U256>,
 }
 
 /// Local Transaction Status
@@ -189,31 +183,15 @@ impl RichRawTransaction {
 
 impl Transaction {
     /// Convert `LocalizedTransaction` into RPC Transaction.
-    pub fn from_localized(mut t: LocalizedTransaction, base_fee: Option<U256>) -> Transaction {
+    pub fn from_localized(mut t: LocalizedTransaction) -> Transaction {
         let signature = t.signature();
         let scheme = CreateContractAddress::FromSenderAndNonce;
 
-        let access_list = match t.as_unsigned() {
-            TypedTransaction::AccessList(tx) => {
-                Some(tx.access_list.clone().into_iter().map(Into::into).collect())
-            }
-            TypedTransaction::EIP1559Transaction(tx) => Some(
-                tx.transaction
-                    .access_list
-                    .clone()
-                    .into_iter()
-                    .map(Into::into)
-                    .collect(),
-            ),
-            TypedTransaction::Legacy(_) => None,
+        let access_list = if let TypedTransaction::AccessList(al) = t.as_unsigned() {
+            Some(al.access_list.clone().into_iter().map(Into::into).collect())
+        } else {
+            None
         };
-
-        let (max_fee_per_gas, max_priority_fee_per_gas) =
-            if let TypedTransaction::EIP1559Transaction(tx) = t.as_unsigned() {
-                (Some(tx.tx().gas_price), Some(tx.max_priority_fee_per_gas))
-            } else {
-                (None, None)
-            };
 
         let standard_v = if t.tx_type() == TypedTxId::Legacy {
             Some(t.standard_v())
@@ -233,8 +211,7 @@ impl Transaction {
                 Action::Call(ref address) => Some(*address),
             },
             value: t.tx().value,
-            gas_price: t.effective_gas_price(base_fee),
-            max_fee_per_gas,
+            gas_price: t.tx().gas_price,
             gas: t.tx().gas,
             input: Bytes::new(t.tx().data.clone()),
             creates: match t.tx().action {
@@ -253,7 +230,6 @@ impl Transaction {
             condition: None,
             transaction_type: t.signed.tx_type().to_U64_option_id(),
             access_list,
-            max_priority_fee_per_gas,
         }
     }
 
@@ -261,29 +237,11 @@ impl Transaction {
     pub fn from_signed(t: SignedTransaction) -> Transaction {
         let signature = t.signature();
         let scheme = CreateContractAddress::FromSenderAndNonce;
-
-        let access_list = match t.as_unsigned() {
-            TypedTransaction::AccessList(tx) => {
-                Some(tx.access_list.clone().into_iter().map(Into::into).collect())
-            }
-            TypedTransaction::EIP1559Transaction(tx) => Some(
-                tx.transaction
-                    .access_list
-                    .clone()
-                    .into_iter()
-                    .map(Into::into)
-                    .collect(),
-            ),
-            TypedTransaction::Legacy(_) => None,
+        let access_list = if let TypedTransaction::AccessList(al) = t.as_unsigned() {
+            Some(al.access_list.clone().into_iter().map(Into::into).collect())
+        } else {
+            None
         };
-
-        let (max_fee_per_gas, max_priority_fee_per_gas) =
-            if let TypedTransaction::EIP1559Transaction(tx) = t.as_unsigned() {
-                (Some(tx.tx().gas_price), Some(tx.max_priority_fee_per_gas))
-            } else {
-                (None, None)
-            };
-
         let standard_v = if t.tx_type() == TypedTxId::Legacy {
             Some(t.standard_v())
         } else {
@@ -303,7 +261,6 @@ impl Transaction {
             },
             value: t.tx().value,
             gas_price: t.tx().gas_price,
-            max_fee_per_gas,
             gas: t.tx().gas,
             input: Bytes::new(t.tx().data.clone()),
             creates: match t.tx().action {
@@ -322,7 +279,6 @@ impl Transaction {
             condition: None,
             transaction_type: t.tx_type().to_U64_option_id(),
             access_list,
-            max_priority_fee_per_gas,
         }
     }
 

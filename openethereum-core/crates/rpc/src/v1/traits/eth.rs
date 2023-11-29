@@ -20,13 +20,16 @@ use jsonrpc_core::{BoxFuture, Result};
 use jsonrpc_derive::rpc;
 
 use v1::types::{
-    BlockNumber, Bytes, CallRequest, EthAccount, EthFeeHistory, Filter, FilterChanges, Index, Log,
-    Receipt, RichBlock, SyncStatus, Transaction, Work,
+    BlockNumber, Bytes, CallRequest, EthAccount, Filter, FilterChanges, Index, Log, Receipt,
+    RichBlock, SyncStatus, Transaction, Work,
 };
 
 /// Eth rpc interface.
 #[rpc(server)]
 pub trait Eth {
+    /// RPC Metadata
+    type Metadata;
+
     /// Returns protocol version encoded as a string (quotes are necessary).
     #[rpc(name = "eth_protocolVersion")]
     fn protocol_version(&self) -> Result<String>;
@@ -56,15 +59,6 @@ pub trait Eth {
     /// Returns current gas_price.
     #[rpc(name = "eth_gasPrice")]
     fn gas_price(&self) -> BoxFuture<U256>;
-
-    /// Returns current max_priority_fee
-    #[rpc(name = "eth_maxPriorityFeePerGas")]
-    fn max_priority_fee_per_gas(&self) -> BoxFuture<U256>;
-
-    /// Returns transaction fee history.
-    #[rpc(name = "eth_feeHistory")]
-    fn fee_history(&self, _: U256, _: BlockNumber, _: Option<Vec<f64>>)
-        -> BoxFuture<EthFeeHistory>;
 
     /// Returns accounts list.
     #[rpc(name = "eth_accounts")]

@@ -49,8 +49,8 @@ impl Header {
     }
 
     /// Upgrade this encoded view to a fully owned `Header` object.
-    pub fn decode(&self, eip1559_transition: BlockNumber) -> Result<FullHeader, rlp::DecoderError> {
-        FullHeader::decode_rlp(&self.rlp(), eip1559_transition)
+    pub fn decode(&self) -> Result<FullHeader, rlp::DecoderError> {
+        rlp::decode(&self.0)
     }
 
     /// Get a borrowed header view onto the data.
@@ -144,13 +144,8 @@ impl Header {
     }
 
     /// Engine-specific seal fields.
-    pub fn seal(&self, eip1559: bool) -> Vec<Vec<u8>> {
-        self.view().seal(eip1559)
-    }
-
-    /// Base fee.
-    pub fn base_fee(&self) -> U256 {
-        self.view().base_fee()
+    pub fn seal(&self) -> Vec<Vec<u8>> {
+        self.view().seal()
     }
 }
 
@@ -172,14 +167,8 @@ impl Body {
     }
 
     /// Fully decode this block body.
-    pub fn decode(
-        &self,
-        eip1559_transition: BlockNumber,
-    ) -> (Vec<UnverifiedTransaction>, Vec<FullHeader>) {
-        (
-            self.view().transactions(),
-            self.view().uncles(eip1559_transition),
-        )
+    pub fn decode(&self) -> (Vec<UnverifiedTransaction>, Vec<FullHeader>) {
+        (self.view().transactions(), self.view().uncles())
     }
 
     /// Get the RLP of this block body.
@@ -227,8 +216,8 @@ impl Body {
     }
 
     /// Decode uncle headers.
-    pub fn uncles(&self, eip1559_transition: BlockNumber) -> Vec<FullHeader> {
-        self.view().uncles(eip1559_transition)
+    pub fn uncles(&self) -> Vec<FullHeader> {
+        self.view().uncles()
     }
 
     /// Number of uncles.
@@ -279,20 +268,13 @@ impl Block {
     }
 
     /// Decode to a full block.
-    pub fn decode(&self, eip1559_transition: BlockNumber) -> Result<FullBlock, rlp::DecoderError> {
-        FullBlock::decode_rlp(&self.rlp(), eip1559_transition)
+    pub fn decode(&self) -> Result<FullBlock, rlp::DecoderError> {
+        rlp::decode(&self.0)
     }
 
     /// Decode the header.
-    pub fn decode_header(&self, eip1559_transition: BlockNumber) -> FullHeader {
-        FullHeader::decode_rlp(&self.view().rlp().at(0).rlp, eip1559_transition).unwrap_or_else(
-            |e| {
-                panic!(
-                    "block header, view rlp is trusted and should be valid: {:?}",
-                    e
-                )
-            },
-        )
+    pub fn decode_header(&self) -> FullHeader {
+        self.view().rlp().val_at(0)
     }
 
     /// Clone the encoded header.
@@ -390,8 +372,8 @@ impl Block {
     }
 
     /// Engine-specific seal fields.
-    pub fn seal(&self, eip1559: bool) -> Vec<Vec<u8>> {
-        self.header_view().seal(eip1559)
+    pub fn seal(&self) -> Vec<Vec<u8>> {
+        self.header_view().seal()
     }
 }
 
@@ -418,8 +400,8 @@ impl Block {
     }
 
     /// Decode uncle headers.
-    pub fn uncles(&self, eip1559_transition: BlockNumber) -> Vec<FullHeader> {
-        self.view().uncles(eip1559_transition)
+    pub fn uncles(&self) -> Vec<FullHeader> {
+        self.view().uncles()
     }
 
     /// Number of uncles.

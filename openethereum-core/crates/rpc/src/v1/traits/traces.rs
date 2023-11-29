@@ -27,6 +27,9 @@ use v1::types::{
 /// Traces specific rpc interface.
 #[rpc(server)]
 pub trait Traces {
+    /// RPC Metadata
+    type Metadata;
+
     /// Returns traces matching given filter.
     #[rpc(name = "trace_filter")]
     fn filter(&self, _: TraceFilter) -> Result<Option<Vec<LocalizedTrace>>>;

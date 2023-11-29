@@ -16,12 +16,11 @@
 
 //! RPC types
 
-pub use rpc_common::Bytes;
-
 pub use self::{
     account_info::{AccountInfo, EthAccount, ExtAccountInfo, RecoveredAccount, StorageProof},
     block::{Block, BlockTransactions, Header, Rich, RichBlock, RichHeader},
     block_number::{block_number_to_id, BlockNumber},
+    bytes::Bytes,
     call_request::CallRequest,
     confirmations::{
         ConfirmationPayload, ConfirmationRequest, ConfirmationResponse,
@@ -30,7 +29,6 @@ pub use self::{
     },
     derivation::{Derive, DeriveHash, DeriveHierarchical},
     eip191::{EIP191Version, PresignedTransaction},
-    fee_history::EthFeeHistory,
     filter::{Filter, FilterChanges},
     histogram::Histogram,
     index::Index,
@@ -59,11 +57,11 @@ mod eth_types;
 mod account_info;
 mod block;
 mod block_number;
+mod bytes;
 mod call_request;
 mod confirmations;
 mod derivation;
 mod eip191;
-mod fee_history;
 mod filter;
 mod histogram;
 mod index;

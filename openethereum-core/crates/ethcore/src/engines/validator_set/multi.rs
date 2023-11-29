@@ -287,11 +287,8 @@ mod tests {
         for i in 1..4 {
             sync_client
                 .import_block(
-                    Unverified::from_rlp(
-                        client.block(BlockId::Number(i)).unwrap().into_inner(),
-                        client.engine().params().eip1559_transition,
-                    )
-                    .unwrap(),
+                    Unverified::from_rlp(client.block(BlockId::Number(i)).unwrap().into_inner())
+                        .unwrap(),
                 )
                 .unwrap();
         }

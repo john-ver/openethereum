@@ -46,8 +46,6 @@ use bytes::Bytes;
 use docopt::Docopt;
 use ethcore::{json_tests, spec, TrieSpec};
 use ethereum_types::{Address, U256};
-use ethjson::spec::ForkSpec;
-use evm::EnvInfo;
 use rustc_hex::FromHex;
 use std::{fmt, fs, path::PathBuf, sync::Arc};
 use vm::{ActionParams, CallType};
@@ -194,18 +192,10 @@ fn run_state_test(args: Args) {
         }
 
         let multitransaction = test.transaction;
-        let env_info: EnvInfo = test.env.into();
+        let env_info = test.env.into();
         let pre = test.pre_state.into();
 
         for (spec, states) in test.post_states {
-            //hardcode base fee for part of the london tests, that miss base fee field in env
-            let mut test_env = env_info.clone();
-            if spec >= ForkSpec::London {
-                if test_env.base_fee.is_none() {
-                    test_env.base_fee = Some(0x0a.into());
-                }
-            }
-
             if let Some(false) = only_chain
                 .as_ref()
                 .map(|only_chain| &format!("{:?}", spec).to_lowercase() == only_chain)
@@ -228,7 +218,7 @@ fn run_state_test(args: Args) {
                         &spec,
                         &pre,
                         post_root,
-                        &test_env,
+                        &env_info,
                         transaction,
                         display::json::Informant::new(config),
                         trie_spec,
@@ -241,7 +231,7 @@ fn run_state_test(args: Args) {
                             &spec,
                             &pre,
                             post_root,
-                            &test_env,
+                            &env_info,
                             transaction,
                             display::std_json::Informant::err_only(config),
                             trie_spec,
@@ -253,7 +243,7 @@ fn run_state_test(args: Args) {
                             &spec,
                             &pre,
                             post_root,
-                            &test_env,
+                            &env_info,
                             transaction,
                             display::std_json::Informant::out_only(config),
                             trie_spec,
@@ -265,7 +255,7 @@ fn run_state_test(args: Args) {
                             &spec,
                             &pre,
                             post_root,
-                            &test_env,
+                            &env_info,
                             transaction,
                             display::std_json::Informant::new_default(config),
                             trie_spec,
@@ -278,7 +268,7 @@ fn run_state_test(args: Args) {
                         &spec,
                         &pre,
                         post_root,
-                        &test_env,
+                        &env_info,
                         transaction,
                         display::simple::Informant::new(config),
                         trie_spec,

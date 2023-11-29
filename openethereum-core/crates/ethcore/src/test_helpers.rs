@@ -39,16 +39,12 @@ use types::{
     transaction::{Action, SignedTransaction, Transaction, TypedTransaction},
     view,
     views::BlockView,
-    BlockNumber,
 };
 
 use block::{Drain, OpenBlock};
 use client::{
-    BlockInfo, ChainInfo, ChainMessageType, ChainNotify, Client, ClientConfig, ImportBlock,
-    PrepareOpenBlock,
+    ChainInfo, ChainMessageType, ChainNotify, Client, ClientConfig, ImportBlock, PrepareOpenBlock,
 };
-use engines::{EngineSigner, Seal};
-use ethjson::crypto::publickey::{Public, Signature};
 use factory::Factories;
 use miner::Miner;
 use spec::Spec;
@@ -226,17 +222,14 @@ where
             .seal(test_engine, vec![])
             .unwrap();
 
-        if let Err(e) = client.import_block(
-            Unverified::from_rlp(b.rlp_bytes(), test_engine.params().eip1559_transition).unwrap(),
-        ) {
+        if let Err(e) = client.import_block(Unverified::from_rlp(b.rlp_bytes()).unwrap()) {
             panic!(
                 "error importing block which is valid by definition: {:?}",
                 e
             );
         }
 
-        last_header =
-            view!(BlockView, &b.rlp_bytes()).header(test_engine.params().eip1559_transition);
+        last_header = view!(BlockView, &b.rlp_bytes()).header();
         db = b.drain().state.drop().1;
     }
     client.flush_queue();
@@ -273,13 +266,9 @@ pub fn push_blocks_to_client(
         rolling_block_number = rolling_block_number + 1;
         rolling_timestamp = rolling_timestamp + 10;
 
-        if let Err(e) = client.import_block(
-            Unverified::from_rlp(
-                create_test_block(&header),
-                test_spec.params().eip1559_transition,
-            )
-            .unwrap(),
-        ) {
+        if let Err(e) =
+            client.import_block(Unverified::from_rlp(create_test_block(&header)).unwrap())
+        {
             panic!(
                 "error importing block which is valid by definition: {:?}",
                 e
@@ -308,9 +297,7 @@ pub fn push_block_with_transactions(client: &Arc<Client>, transactions: &[Signed
         .seal(test_engine, vec![])
         .unwrap();
 
-    if let Err(e) = client.import_block(
-        Unverified::from_rlp(b.rlp_bytes(), test_spec.params().eip1559_transition).unwrap(),
-    ) {
+    if let Err(e) = client.import_block(Unverified::from_rlp(b.rlp_bytes()).unwrap()) {
         panic!(
             "error importing block which is valid by definition: {:?}",
             e
@@ -319,44 +306,6 @@ pub fn push_block_with_transactions(client: &Arc<Client>, transactions: &[Signed
 
     client.flush_queue();
     client.import_verified_blocks();
-}
-
-pub fn push_block_with_transactions_and_author(
-    client: &Arc<Client>,
-    transactions: &[SignedTransaction],
-    author: Address,
-    signer: Option<Box<dyn EngineSigner>>,
-) {
-    let test_engine = client.engine();
-
-    let mut b = client
-        .prepare_open_block(author, (0.into(), 5000000.into()), Bytes::new())
-        .unwrap();
-
-    for t in transactions {
-        b.push_transaction(t.clone(), None).unwrap();
-    }
-    let b = b.close_and_lock().unwrap();
-
-    test_engine.set_signer(signer);
-    let parent_header = client.best_block_header();
-    let b = match client.engine().generate_seal(&b, &parent_header) {
-        Seal::Regular(seal) => b.seal(&*client.engine(), seal).unwrap(),
-        _ => panic!("error generating seal"),
-    };
-
-    if let Err(e) = client.import_block(
-        Unverified::from_rlp(b.rlp_bytes(), client.engine().params().eip1559_transition).unwrap(),
-    ) {
-        panic!(
-            "error importing block which is valid by definition: {:?}",
-            e
-        );
-    }
-
-    client.flush_queue();
-    client.import_verified_blocks();
-    test_engine.step();
 }
 
 /// Creates dummy client (not test client) with corresponding blocks
@@ -374,9 +323,7 @@ pub fn get_test_client_with_blocks(blocks: Vec<Bytes>) -> Arc<Client> {
     .unwrap();
 
     for block in blocks {
-        if let Err(e) = client.import_block(
-            Unverified::from_rlp(block, test_spec.params().eip1559_transition).unwrap(),
-        ) {
+        if let Err(e) = client.import_block(Unverified::from_rlp(block).unwrap()) {
             panic!("error importing block which is well-formed: {:?}", e);
         }
     }
@@ -509,7 +456,6 @@ pub fn generate_dummy_blockchain(block_number: u32) -> BlockChain {
         BlockChainConfig::default(),
         &create_unverifiable_block(0, H256::zero()),
         db.clone(),
-        BlockNumber::max_value(),
     );
 
     let mut batch = db.key_value().transaction();
@@ -537,7 +483,6 @@ pub fn generate_dummy_blockchain_with_extra(block_number: u32) -> BlockChain {
         BlockChainConfig::default(),
         &create_unverifiable_block(0, H256::zero()),
         db.clone(),
-        BlockNumber::max_value(),
     );
 
     let mut batch = db.key_value().transaction();
@@ -569,7 +514,6 @@ pub fn generate_dummy_empty_blockchain() -> BlockChain {
         BlockChainConfig::default(),
         &create_unverifiable_block(0, H256::zero()),
         db.clone(),
-        BlockNumber::max_value(),
     );
     bc
 }
@@ -684,39 +628,4 @@ impl ChainNotify for TestNotify {
         };
         self.messages.write().push(data);
     }
-}
-
-/// Returns engine signer with specified address
-pub fn dummy_engine_signer_with_address(addr: Address) -> Box<dyn EngineSigner> {
-    struct TestEngineSigner(Address);
-
-    impl TestEngineSigner {
-        fn with_address(addr: Address) -> Self {
-            Self(addr)
-        }
-    }
-
-    impl EngineSigner for TestEngineSigner {
-        fn sign(&self, _hash: H256) -> Result<Signature, ethjson::crypto::publickey::Error> {
-            unimplemented!()
-        }
-
-        fn address(&self) -> Address {
-            self.0
-        }
-
-        fn decrypt(
-            &self,
-            _auth_data: &[u8],
-            _cipher: &[u8],
-        ) -> Result<Vec<u8>, parity_crypto::publickey::Error> {
-            unimplemented!()
-        }
-
-        fn public(&self) -> Option<Public> {
-            unimplemented!()
-        }
-    }
-
-    Box::new(TestEngineSigner::with_address(addr))
 }

@@ -18,8 +18,7 @@ use crypto::publickey::{Generator, Random};
 use ethereum_types::{H256, U256};
 use rustc_hex::FromHex;
 use types::transaction::{
-    self, AccessListTx, EIP1559TransactionTx, SignedTransaction, Transaction, TypedTransaction,
-    UnverifiedTransaction,
+    self, SignedTransaction, Transaction, TypedTransaction, UnverifiedTransaction,
 };
 
 use pool::{verifier, VerifiedTransaction};
@@ -29,7 +28,6 @@ pub struct Tx {
     pub nonce: u64,
     pub gas: u64,
     pub gas_price: u64,
-    pub value: u64,
 }
 
 impl Default for Tx {
@@ -38,7 +36,6 @@ impl Default for Tx {
             nonce: 123,
             gas: 21_000,
             gas_price: 1,
-            value: 100,
         }
     }
 }
@@ -49,11 +46,6 @@ impl Tx {
             gas_price,
             ..Default::default()
         }
-    }
-
-    pub fn with_value(mut self, value: u64) -> Self {
-        self.value = value;
-        self
     }
 
     pub fn signed(self) -> SignedTransaction {
@@ -89,7 +81,7 @@ impl Tx {
     pub fn unsigned(self) -> TypedTransaction {
         TypedTransaction::Legacy(Transaction {
             action: transaction::Action::Create,
-            value: self.value.into(),
+            value: U256::from(100),
             data: "3331600055".from_hex().unwrap(),
             gas: self.gas.into(),
             gas_price: self.gas_price.into(),
@@ -101,32 +93,13 @@ impl Tx {
         let keypair = Random.generate();
         let tx = TypedTransaction::Legacy(Transaction {
             action: transaction::Action::Create,
-            value: self.value.into(),
+            value: U256::from(100),
             data: include_str!("../res/big_transaction.data")
                 .from_hex()
                 .unwrap(),
             gas: self.gas.into(),
             gas_price: self.gas_price.into(),
             nonce: self.nonce.into(),
-        });
-        tx.sign(keypair.secret(), None)
-    }
-
-    pub fn eip1559_one(self, max_priority_fee_per_gas: u64) -> SignedTransaction {
-        let keypair = Random.generate();
-        let tx = TypedTransaction::EIP1559Transaction(EIP1559TransactionTx {
-            transaction: AccessListTx {
-                transaction: Transaction {
-                    action: transaction::Action::Create,
-                    value: U256::from(100),
-                    data: "3331600055".from_hex().unwrap(),
-                    gas: self.gas.into(),
-                    gas_price: self.gas_price.into(),
-                    nonce: self.nonce.into(),
-                },
-                access_list: vec![],
-            },
-            max_priority_fee_per_gas: max_priority_fee_per_gas.into(),
         });
         tx.sign(keypair.secret(), None)
     }

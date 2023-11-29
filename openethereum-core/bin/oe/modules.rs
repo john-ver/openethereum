@@ -26,14 +26,12 @@ use std::collections::BTreeSet;
 pub use crate::sync::{EthSync, ManageNetwork, SyncProvider};
 pub use ethcore::client::ChainNotify;
 use ethcore_logger::Config as LogConfig;
-use ethereum_types::H256;
 
 pub type SyncModules = (
     Arc<dyn SyncProvider>,
     Arc<dyn ManageNetwork>,
     Arc<dyn ChainNotify>,
     mpsc::Sender<sync::PriorityTask>,
-    crossbeam_channel::Sender<H256>,
 );
 
 pub fn sync(
@@ -61,6 +59,5 @@ pub fn sync(
         eth_sync.clone() as Arc<dyn ManageNetwork>,
         eth_sync.clone() as Arc<dyn ChainNotify>,
         eth_sync.priority_tasks(),
-        eth_sync.new_transaction_hashes(),
     ))
 }

@@ -204,7 +204,7 @@ pub fn json_chain_test<H: FnMut(&str, HookType)>(
 
                 for b in blockchain.blocks_rlp() {
                     let bytes_len = b.len();
-                    let block = Unverified::from_rlp(b, spec.params().eip1559_transition);
+                    let block = Unverified::from_rlp(b);
                     match block {
                         Ok(block) => {
                             let num = block.header.number();

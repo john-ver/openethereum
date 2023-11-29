@@ -19,7 +19,8 @@ use std::{env, sync::Arc};
 
 use accounts::AccountProvider;
 use ethcore::{
-    client::{BlockChainClient, ChainInfo, Client, ClientConfig, EvmTestClient, ImportBlock},
+    client::{BlockChainClient, ChainInfo, Client, ClientConfig, ImportBlock},
+    ethereum,
     miner::Miner,
     spec::{Genesis, Spec},
     test_helpers,
@@ -66,7 +67,7 @@ fn snapshot_service() -> Arc<TestSnapshotService> {
 
 fn make_spec(chain: &BlockChain) -> Spec {
     let genesis = Genesis::from(chain.genesis());
-    let mut spec = EvmTestClient::spec_from_json(&chain.network).unwrap();
+    let mut spec = ethereum::new_frontier_test();
     let state = chain.pre_state.clone().into();
     spec.set_genesis_state(state)
         .expect("unable to set genesis state");
@@ -96,9 +97,7 @@ impl EthTester {
         };
 
         for b in chain.blocks_rlp() {
-            if let Ok(block) =
-                Unverified::from_rlp(b, tester.client.engine().params().eip1559_transition)
-            {
+            if let Ok(block) = Unverified::from_rlp(b) {
                 let _ = tester.client.import_block(block);
                 tester.client.flush_queue();
                 tester.client.import_verified_blocks();
@@ -278,26 +277,6 @@ fn eth_get_block() {
         tester.handler.handle_request_sync(req_block).unwrap(),
         res_block
     );
-}
-
-#[test]
-fn eth_get_max_priority_fee_per_gas() {
-    let chain = extract_non_legacy_chain!(
-        "BlockchainTests/ValidBlocks/bcEIP1559/transType",
-        ForkSpec::London
-    );
-    let tester = EthTester::from_chain(&chain);
-    let request = r#"{"method":"eth_maxPriorityFeePerGas","params":[],"id":1,"jsonrpc":"2.0"}"#;
-
-    // We are expecting for 50-th percentile of the previous 100 blocks transactions priority fees.
-    //
-    // Sorted priority fees: 0x64 0x64 0x64 0x7d 0x7d 0xea 0x149.
-    // Currently, the way 50-th percentile is calculated, the 3rd fee would be the result.
-    let response = r#"{"jsonrpc":"2.0","result":"0x64","id":1}"#;
-    assert_eq!(
-        tester.handler.handle_request_sync(request).unwrap(),
-        response
-    )
 }
 
 #[test]
@@ -566,9 +545,11 @@ fn verify_transaction_counts(name: String, chain: BlockChain) {
     let tester = EthTester::from_chain(&chain);
 
     let mut id = 1;
-    for b in chain.blocks_rlp().into_iter().filter_map(|b| {
-        Unverified::from_rlp(b, tester.client.engine().params().eip1559_transition).ok()
-    }) {
+    for b in chain
+        .blocks_rlp()
+        .into_iter()
+        .filter_map(|b| Unverified::from_rlp(b).ok())
+    {
         let count = b.transactions.len();
 
         let hash = b.header.hash();

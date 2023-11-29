@@ -37,13 +37,6 @@ pub enum Error {
         /// Transaction gas price
         got: U256,
     },
-    /// Transaction's max gas price is lower then block base fee.
-    GasPriceLowerThanBaseFee {
-        /// Transaction max gas price
-        gas_price: U256,
-        /// Current block base fee
-        base_fee: U256,
-    },
     /// Transaction has too low fee
     /// (there is already a transaction with the same sender-nonce but higher gas price)
     TooCheapToReplace {
@@ -93,8 +86,6 @@ pub enum Error {
     InvalidRlp(String),
     /// Transaciton is still not enabled.
     TransactionTypeNotEnabled,
-    /// Transaction sender is not an EOA (see EIP-3607)
-    SenderIsNotEOA,
 }
 
 impl From<crypto::publickey::Error> for Error {
@@ -123,15 +114,6 @@ impl fmt::Display for Error {
             InsufficientGasPrice { minimal, got } => {
                 format!("Insufficient gas price. Min={}, Given={}", minimal, got)
             }
-            GasPriceLowerThanBaseFee {
-                gas_price,
-                base_fee,
-            } => {
-                format!(
-                    "Max gas price is lower then required base fee. Gas price={}, Base fee={}",
-                    gas_price, base_fee
-                )
-            }
             InsufficientGas { minimal, got } => {
                 format!("Insufficient gas. Min={}, Given={}", minimal, got)
             }
@@ -156,7 +138,6 @@ impl fmt::Display for Error {
             TransactionTypeNotEnabled => {
                 format!("Transaction type is not enabled for current block")
             }
-            SenderIsNotEOA => "Transaction sender is not an EOA (see EIP-3607)".into(),
         };
 
         f.write_fmt(format_args!("Transaction error ({})", msg))

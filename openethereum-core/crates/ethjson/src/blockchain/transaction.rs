@@ -27,7 +27,7 @@ pub struct Transaction {
     pub transaction_type: Option<Uint>,
     pub data: Bytes,
     pub gas_limit: Uint,
-    pub gas_price: Option<Uint>,
+    pub gas_price: Uint,
     pub nonce: Uint,
     pub r: Uint,
     pub s: Uint,
@@ -35,8 +35,6 @@ pub struct Transaction {
     pub value: Uint,
     pub chain_id: Option<Uint>,
     pub access_list: Option<AccessList>,
-    pub max_fee_per_gas: Option<Uint>,
-    pub max_priority_fee_per_gas: Option<Uint>,
     pub hash: Option<H256>,
 }
 

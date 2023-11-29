@@ -19,8 +19,7 @@
 use std::sync::Arc;
 
 use ethcore::client::{
-    BlockChainClient, BlockId, Call, CallAnalytics, EngineInfo, StateClient, StateInfo, TraceId,
-    TransactionId,
+    BlockChainClient, BlockId, Call, CallAnalytics, StateClient, StateInfo, TraceId, TransactionId,
 };
 use ethereum_types::H256;
 use types::transaction::{SignedTransaction, TypedTransaction};
@@ -33,6 +32,7 @@ use v1::{
         block_number_to_id, BlockNumber, Bytes, CallRequest, Index, LocalizedTrace, TraceFilter,
         TraceOptions, TraceResults, TraceResultsWithTransactionHash,
     },
+    Metadata,
 };
 
 fn to_call_analytics(flags: TraceOptions) -> CallAnalytics {
@@ -60,8 +60,10 @@ impl<C> TracesClient<C> {
 impl<C, S> Traces for TracesClient<C>
 where
     S: StateInfo + 'static,
-    C: BlockChainClient + StateClient<State = S> + Call<State = S> + EngineInfo + 'static,
+    C: BlockChainClient + StateClient<State = S> + Call<State = S> + 'static,
 {
+    type Metadata = Metadata;
+
     fn filter(&self, filter: TraceFilter) -> Result<Option<Vec<LocalizedTrace>>> {
         Ok(self
             .client
@@ -133,9 +135,7 @@ where
                 &signed,
                 to_call_analytics(flags),
                 &mut state,
-                &header
-                    .decode(self.client.engine().params().eip1559_transition)
-                    .map_err(errors::decode)?,
+                &header.decode().map_err(errors::decode)?,
             )
             .map(TraceResults::from)
             .map_err(errors::call)
@@ -181,9 +181,7 @@ where
             .call_many(
                 &requests,
                 &mut state,
-                &header
-                    .decode(self.client.engine().params().eip1559_transition)
-                    .map_err(errors::decode)?,
+                &header.decode().map_err(errors::decode)?,
             )
             .map(|results| results.into_iter().map(TraceResults::from).collect())
             .map_err(errors::call)
@@ -226,9 +224,7 @@ where
                 &signed,
                 to_call_analytics(flags),
                 &mut state,
-                &header
-                    .decode(self.client.engine().params().eip1559_transition)
-                    .map_err(errors::decode)?,
+                &header.decode().map_err(errors::decode)?,
             )
             .map(TraceResults::from)
             .map_err(errors::call)

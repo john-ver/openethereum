@@ -22,7 +22,6 @@ use std::sync::{atomic::AtomicBool, Arc};
 use blockchain::{BlockChain, BlockChainDB};
 use engines::EthEngine;
 use snapshot::{Error, ManifestData, Progress};
-use types::BlockNumber;
 
 use ethereum_types::H256;
 
@@ -50,7 +49,6 @@ pub trait SnapshotComponents: Send {
         chunk_sink: &mut ChunkSink,
         progress: &Progress,
         preferred_size: usize,
-        eip1559_transition: BlockNumber,
     ) -> Result<(), Error>;
 
     /// Create a rebuilder, which will have chunks fed into it in aribtrary

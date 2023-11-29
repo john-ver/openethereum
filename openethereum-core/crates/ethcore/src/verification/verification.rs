@@ -84,11 +84,11 @@ pub fn verify_block_basic(
     }
 
     // t_nb 4.6 call engine.gas_limit_override (Used only by Aura)
-    if let Some(expected_gas_limit) = engine.gas_limit_override(&block.header) {
-        if block.header.gas_limit() != &expected_gas_limit {
+    if let Some(gas_limit) = engine.gas_limit_override(&block.header) {
+        if *block.header.gas_limit() != gas_limit {
             return Err(From::from(BlockError::InvalidGasLimit(OutOfBounds {
-                min: Some(expected_gas_limit),
-                max: Some(expected_gas_limit),
+                min: Some(gas_limit),
+                max: Some(gas_limit),
                 found: *block.header.gas_limit(),
             })));
         }
@@ -295,7 +295,7 @@ fn verify_uncles(
                 )));
             }
 
-            let uncle_parent = uncle_parent.decode(engine.params().eip1559_transition)?;
+            let uncle_parent = uncle_parent.decode()?;
             verify_parent(&uncle, &uncle_parent, engine)?;
             engine.verify_block_family(&uncle, &uncle_parent)?;
             verified.insert(uncle.hash());
@@ -360,8 +360,6 @@ pub fn verify_header_params(
             found: header.number(),
         })));
     }
-
-    // check if the block used too much gas
     if header.gas_used() > header.gas_limit() {
         return Err(From::from(BlockError::TooMuchGasUsed(OutOfBounds {
             max: Some(*header.gas_limit()),
@@ -478,11 +476,9 @@ fn verify_parent(header: &Header, parent: &Header, engine: &dyn EthEngine) -> Re
         .into());
     }
 
-    // check if the block changed the gas limit too much
     if engine.gas_limit_override(header).is_none() {
         let gas_limit_divisor = engine.params().gas_limit_bound_divisor;
-        let parent_gas_limit =
-            parent.gas_limit() * engine.schedule(header.number()).eip1559_gas_limit_bump;
+        let parent_gas_limit = *parent.gas_limit();
         let min_gas = parent_gas_limit - parent_gas_limit / gas_limit_divisor;
         let max_gas = parent_gas_limit + parent_gas_limit / gas_limit_divisor;
         if header.gas_limit() <= &min_gas || header.gas_limit() >= &max_gas {
@@ -493,15 +489,6 @@ fn verify_parent(header: &Header, parent: &Header, engine: &dyn EthEngine) -> Re
             })));
         }
     }
-
-    // check if the base fee is correct
-    let expected_base_fee = engine.calculate_base_fee(parent);
-    if expected_base_fee != header.base_fee() {
-        return Err(From::from(BlockError::IncorrectBaseFee(Mismatch {
-            expected: expected_base_fee.unwrap_or_default(),
-            found: header.base_fee().unwrap_or_default(),
-        })));
-    };
 
     Ok(())
 }
@@ -612,9 +599,7 @@ mod tests {
         }
 
         pub fn insert(&mut self, bytes: Bytes) {
-            let header = Unverified::from_rlp(bytes.clone(), BlockNumber::max_value())
-                .unwrap()
-                .header;
+            let header = Unverified::from_rlp(bytes.clone()).unwrap().header;
             let hash = header.hash();
             self.blocks.insert(hash, bytes);
             self.numbers.insert(header.number(), hash);
@@ -654,9 +639,7 @@ mod tests {
         /// Get the familial details concerning a block.
         fn block_details(&self, hash: &H256) -> Option<BlockDetails> {
             self.blocks.get(hash).map(|bytes| {
-                let header = Unverified::from_rlp(bytes.to_vec(), BlockNumber::max_value())
-                    .unwrap()
-                    .header;
+                let header = Unverified::from_rlp(bytes.to_vec()).unwrap().header;
                 BlockDetails {
                     number: header.number(),
                     total_difficulty: *header.difficulty(),
@@ -710,7 +693,7 @@ mod tests {
     }
 
     fn basic_test(bytes: &[u8], engine: &dyn EthEngine) -> Result<(), Error> {
-        let unverified = Unverified::from_rlp(bytes.to_vec(), engine.params().eip1559_transition)?;
+        let unverified = Unverified::from_rlp(bytes.to_vec())?;
         verify_block_basic(&unverified, engine, true)
     }
 
@@ -718,8 +701,7 @@ mod tests {
     where
         BC: BlockProvider,
     {
-        let block =
-            Unverified::from_rlp(bytes.to_vec(), engine.params().eip1559_transition).unwrap();
+        let block = Unverified::from_rlp(bytes.to_vec()).unwrap();
         let header = block.header;
         let transactions: Vec<_> = block
             .transactions
@@ -735,7 +717,7 @@ mod tests {
         let parent = bc
             .block_header_data(header.parent_hash())
             .ok_or(BlockError::UnknownParent(*header.parent_hash()))?
-            .decode(engine.params().eip1559_transition)?;
+            .decode()?;
 
         let block = PreverifiedBlock {
             header,
@@ -753,7 +735,7 @@ mod tests {
     }
 
     fn unordered_test(bytes: &[u8], engine: &dyn EthEngine) -> Result<(), Error> {
-        let un = Unverified::from_rlp(bytes.to_vec(), engine.params().eip1559_transition)?;
+        let un = Unverified::from_rlp(bytes.to_vec())?;
         verify_block_unordered(un, engine, false)?;
         Ok(())
     }

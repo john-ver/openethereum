@@ -18,7 +18,6 @@
 
 use std::{io, sync::Arc};
 
-use bytes::Bytes;
 use ethcore_db::{DBTransaction, DBValue, KeyValueDB};
 use ethereum_types::H256;
 use hash_db::{AsHashDB, HashDB};
@@ -95,9 +94,6 @@ pub trait JournalDB: KeyedHashDB {
 
     /// Consolidate all the insertions and deletions in the given memory overlay.
     fn consolidate(&mut self, overlay: ::memory_db::MemoryDB<KeccakHasher, DBValue>);
-
-    /// State data query
-    fn state(&self, id: &H256) -> Option<Bytes>;
 
     /// Commit all changes in a single batch
     #[cfg(test)]

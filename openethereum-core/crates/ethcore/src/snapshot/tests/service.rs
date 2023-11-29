@@ -240,9 +240,7 @@ fn keep_ancient_blocks() {
         let block_hash = bc.block_hash(block_number).unwrap();
         let block = bc.block(&block_hash).unwrap();
         client2
-            .import_block(
-                Unverified::from_rlp(block.into_inner(), spec.params().eip1559_transition).unwrap(),
-            )
+            .import_block(Unverified::from_rlp(block.into_inner()).unwrap())
             .unwrap();
     }
 

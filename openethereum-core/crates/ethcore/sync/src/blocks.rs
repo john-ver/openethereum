@@ -26,7 +26,6 @@ use triehash_ethereum::ordered_trie_root;
 use types::{
     header::Header as BlockHeader,
     transaction::{TypedTransaction, UnverifiedTransaction},
-    BlockNumber,
 };
 
 malloc_size_of_is_0!(HeaderId);
@@ -38,10 +37,9 @@ pub struct SyncHeader {
 }
 
 impl SyncHeader {
-    pub fn from_rlp(bytes: Bytes, eip1559_transition: BlockNumber) -> Result<Self, DecoderError> {
-        let rlp = Rlp::new(&bytes);
+    pub fn from_rlp(bytes: Bytes) -> Result<Self, DecoderError> {
         let result = SyncHeader {
-            header: BlockHeader::decode_rlp(&rlp, eip1559_transition)?,
+            header: ::rlp::decode(&bytes)?,
             bytes,
         };
 
@@ -58,7 +56,7 @@ pub struct SyncBody {
 }
 
 impl SyncBody {
-    pub fn from_rlp(bytes: &[u8], eip1559_transition: BlockNumber) -> Result<Self, DecoderError> {
+    pub fn from_rlp(bytes: &[u8]) -> Result<Self, DecoderError> {
         let rlp = Rlp::new(bytes);
         let transactions_rlp = rlp.at(0)?;
         let uncles_rlp = rlp.at(1)?;
@@ -67,7 +65,7 @@ impl SyncBody {
             transactions_bytes: transactions_rlp.as_raw().to_vec(),
             transactions: TypedTransaction::decode_rlp_list(&transactions_rlp)?,
             uncles_bytes: uncles_rlp.as_raw().to_vec(),
-            uncles: BlockHeader::decode_rlp_list(&uncles_rlp, eip1559_transition)?,
+            uncles: uncles_rlp.as_list()?,
         };
 
         Ok(result)
@@ -674,13 +672,7 @@ mod test {
             .collect();
         let headers: Vec<_> = blocks
             .iter()
-            .map(|b| {
-                SyncHeader::from_rlp(
-                    Rlp::new(b).at(0).unwrap().as_raw().to_vec(),
-                    client.spec.params().eip1559_transition,
-                )
-                .unwrap()
-            })
+            .map(|b| SyncHeader::from_rlp(Rlp::new(b).at(0).unwrap().as_raw().to_vec()).unwrap())
             .collect();
         let hashes: Vec<_> = headers.iter().map(|h| h.header.hash()).collect();
         let heads: Vec<_> = hashes
@@ -715,10 +707,7 @@ mod test {
             bc.drain().into_iter().map(|b| b.block).collect::<Vec<_>>(),
             blocks[0..6]
                 .iter()
-                .map(
-                    |b| Unverified::from_rlp(b.to_vec(), client.spec.params().eip1559_transition)
-                        .unwrap()
-                )
+                .map(|b| Unverified::from_rlp(b.to_vec()).unwrap())
                 .collect::<Vec<_>>()
         );
         assert!(!bc.contains(&hashes[0]));
@@ -735,10 +724,7 @@ mod test {
             bc.drain().into_iter().map(|b| b.block).collect::<Vec<_>>(),
             blocks[6..16]
                 .iter()
-                .map(
-                    |b| Unverified::from_rlp(b.to_vec(), client.spec.params().eip1559_transition)
-                        .unwrap()
-                )
+                .map(|b| Unverified::from_rlp(b.to_vec()).unwrap())
                 .collect::<Vec<_>>()
         );
 
@@ -766,13 +752,7 @@ mod test {
             .collect();
         let headers: Vec<_> = blocks
             .iter()
-            .map(|b| {
-                SyncHeader::from_rlp(
-                    Rlp::new(b).at(0).unwrap().as_raw().to_vec(),
-                    client.spec.params().eip1559_transition,
-                )
-                .unwrap()
-            })
+            .map(|b| SyncHeader::from_rlp(Rlp::new(b).at(0).unwrap().as_raw().to_vec()).unwrap())
             .collect();
         let hashes: Vec<_> = headers.iter().map(|h| h.header.hash()).collect();
         let heads: Vec<_> = hashes
@@ -808,13 +788,7 @@ mod test {
             .collect();
         let headers: Vec<_> = blocks
             .iter()
-            .map(|b| {
-                SyncHeader::from_rlp(
-                    Rlp::new(b).at(0).unwrap().as_raw().to_vec(),
-                    client.spec.params().eip1559_transition,
-                )
-                .unwrap()
-            })
+            .map(|b| SyncHeader::from_rlp(Rlp::new(b).at(0).unwrap().as_raw().to_vec()).unwrap())
             .collect();
         let hashes: Vec<_> = headers.iter().map(|h| h.header.hash()).collect();
         let heads: Vec<_> = hashes

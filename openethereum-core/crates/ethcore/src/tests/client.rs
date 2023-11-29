@@ -104,7 +104,7 @@ fn imports_good_block() {
     .unwrap();
     let good_block = get_good_dummy_block();
     if client
-        .import_block(Unverified::from_rlp(good_block, spec.params().eip1559_transition).unwrap())
+        .import_block(Unverified::from_rlp(good_block).unwrap())
         .is_err()
     {
         panic!("error importing block being good by definition");
@@ -147,12 +147,7 @@ fn returns_chain_info() {
     let client = get_test_client_with_blocks(vec![dummy_block.clone()]);
     let block = view!(BlockView, &dummy_block);
     let info = client.chain_info();
-    assert_eq!(
-        info.best_block_hash,
-        block
-            .header(client.engine().params().eip1559_transition)
-            .hash()
-    );
+    assert_eq!(info.best_block_hash, block.header().hash());
 }
 
 #[test]
@@ -193,11 +188,7 @@ fn returns_block_body() {
     let client = get_test_client_with_blocks(vec![dummy_block.clone()]);
     let block = view!(BlockView, &dummy_block);
     let body = client
-        .block_body(BlockId::Hash(
-            block
-                .header(client.engine().params().eip1559_transition)
-                .hash(),
-        ))
+        .block_body(BlockId::Hash(block.header().hash()))
         .unwrap();
     let body = body.rlp();
     assert_eq!(body.item_count().unwrap(), 2);
@@ -590,13 +581,4 @@ fn import_export_binary() {
     assert!(client.block_header(BlockId::Number(20)).is_some());
     assert!(client.block_header(BlockId::Number(17)).is_some());
     assert!(client.block_header(BlockId::Number(16)).is_some());
-}
-
-#[test]
-fn returns_state_root_basic() {
-    let client = generate_dummy_client(6);
-    let test_spec = Spec::new_test();
-    let genesis_header = test_spec.genesis_header();
-
-    assert!(client.state_data(genesis_header.state_root()).is_some());
 }

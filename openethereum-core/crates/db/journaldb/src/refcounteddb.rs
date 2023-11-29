@@ -23,7 +23,6 @@ use std::{
 };
 
 use super::{traits::JournalDB, LATEST_ERA_KEY};
-use bytes::Bytes;
 use ethcore_db::{DBTransaction, DBValue, KeyValueDB};
 use ethereum_types::H256;
 use hash_db::HashDB;
@@ -33,7 +32,6 @@ use overlaydb::OverlayDB;
 use parity_util_mem::{allocators::new_malloc_size_ops, MallocSizeOf};
 use rlp::{decode, encode};
 use util::{DatabaseKey, DatabaseValueRef, DatabaseValueView};
-use DB_PREFIX_LEN;
 
 /// Implementation of the `HashDB` trait for a disk-backed database with a memory overlay
 /// and latent-removal semantics.
@@ -246,12 +244,6 @@ impl JournalDB for RefCountedDB {
                 self.remove(&key);
             }
         }
-    }
-
-    fn state(&self, id: &H256) -> Option<Bytes> {
-        self.backing
-            .get_by_prefix(self.column, &id[0..DB_PREFIX_LEN])
-            .map(|b| b.into_vec())
     }
 }
 

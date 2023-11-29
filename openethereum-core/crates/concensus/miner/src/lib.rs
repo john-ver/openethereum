@@ -35,7 +35,7 @@ extern crate parking_lot;
 #[cfg(feature = "price-info")]
 extern crate price_info;
 extern crate rlp;
-extern crate txpool;
+extern crate transaction_pool as txpool;
 
 #[macro_use]
 extern crate ethabi_contract;

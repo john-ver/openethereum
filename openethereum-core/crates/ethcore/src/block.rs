@@ -139,8 +139,7 @@ impl ExecutedBlock {
             difficulty: self.header.difficulty().clone(),
             last_hashes: self.last_hashes.clone(),
             gas_used: self.receipts.last().map_or(U256::zero(), |r| r.gas_used),
-            gas_limit: *self.header.gas_limit(),
-            base_fee: self.header.base_fee(),
+            gas_limit: self.header.gas_limit().clone(),
         }
     }
 
@@ -197,9 +196,6 @@ impl<'x> OpenBlock<'x> {
             .header
             .set_timestamp(engine.open_block_header_timestamp(parent.timestamp()));
         r.block.header.set_extra_data(extra_data);
-        r.block
-            .header
-            .set_base_fee(engine.calculate_base_fee(parent));
 
         let gas_floor_target = cmp::max(gas_range_target.0, engine.params().min_gas_limit);
         let gas_ceil_target = cmp::max(gas_range_target.1, gas_floor_target);
@@ -229,11 +225,6 @@ impl<'x> OpenBlock<'x> {
     /// Removes block gas limit.
     pub fn remove_gas_limit(&mut self) {
         self.block.header.set_gas_limit(U256::max_value());
-    }
-
-    /// Set block gas limit.
-    pub fn set_gas_limit(&mut self, gas_limit: U256) {
-        self.block.header.set_gas_limit(gas_limit);
     }
 
     // t_nb 8.4 Add an uncle to the block, if possible.
@@ -568,9 +559,11 @@ pub(crate) fn enact(
     )?;
 
     if let Some(ref s) = trace_state {
-        let author_balance = s.balance(&b.header.author())?;
+        let env = b.env_info();
+        let root = s.root();
+        let author_balance = s.balance(&env.author)?;
         trace!(target: "enact", "num={}, root={}, author={}, author_balance={}\n",
-				b.block.header.number(), s.root(), b.header.author(), author_balance);
+				b.block.header.number(), root, env.author, author_balance);
     }
 
     // t_nb 8.2 transfer all field from current header to OpenBlock header that we created
@@ -639,7 +632,7 @@ mod tests {
         last_hashes: Arc<LastHashes>,
         factories: Factories,
     ) -> Result<LockedBlock, Error> {
-        let block = Unverified::from_rlp(block_bytes, engine.params().eip1559_transition)?;
+        let block = Unverified::from_rlp(block_bytes)?;
         let header = block.header;
         let transactions: Result<Vec<_>, Error> = block
             .transactions
@@ -696,8 +689,7 @@ mod tests {
         last_hashes: Arc<LastHashes>,
         factories: Factories,
     ) -> Result<SealedBlock, Error> {
-        let header =
-            Unverified::from_rlp(block_bytes.clone(), engine.params().eip1559_transition)?.header;
+        let header = Unverified::from_rlp(block_bytes.clone())?.header;
         Ok(enact_bytes(
             block_bytes,
             engine,
@@ -854,7 +846,7 @@ mod tests {
 
         let bytes = e.rlp_bytes();
         assert_eq!(bytes, orig_bytes);
-        let uncles = view!(BlockView, &bytes).uncles(engine.params().eip1559_transition);
+        let uncles = view!(BlockView, &bytes).uncles();
         assert_eq!(uncles[1].extra_data(), b"uncle2");
 
         let db = e.drain().state.drop().1;

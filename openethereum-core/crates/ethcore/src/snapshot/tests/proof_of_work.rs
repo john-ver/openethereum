@@ -51,12 +51,7 @@ fn chunk_and_restore(amount: u64) {
     let snapshot_path = tempdir.path().join("SNAP");
 
     let old_db = test_helpers::new_db();
-    let bc = BlockChain::new(
-        Default::default(),
-        genesis.encoded().raw(),
-        old_db.clone(),
-        engine.params().eip1559_transition,
-    );
+    let bc = BlockChain::new(Default::default(), genesis.encoded().raw(), old_db.clone());
 
     // build the blockchain.
     let mut batch = DBTransaction::new();
@@ -101,12 +96,7 @@ fn chunk_and_restore(amount: u64) {
 
     // restore it.
     let new_db = test_helpers::new_db();
-    let new_chain = BlockChain::new(
-        Default::default(),
-        genesis.encoded().raw(),
-        new_db.clone(),
-        engine.params().eip1559_transition,
-    );
+    let new_chain = BlockChain::new(Default::default(), genesis.encoded().raw(), new_db.clone());
     let mut rebuilder = SNAPSHOT_MODE
         .rebuilder(new_chain, new_db.clone(), &manifest)
         .unwrap();
@@ -123,12 +113,7 @@ fn chunk_and_restore(amount: u64) {
     drop(rebuilder);
 
     // and test it.
-    let new_chain = BlockChain::new(
-        Default::default(),
-        genesis.encoded().raw(),
-        new_db,
-        engine.params().eip1559_transition,
-    );
+    let new_chain = BlockChain::new(Default::default(), genesis.encoded().raw(), new_db);
     assert_eq!(new_chain.best_block_hash(), best_hash);
 }
 
@@ -165,7 +150,6 @@ fn checks_flag() {
         Default::default(),
         genesis.last().encoded().raw(),
         db.clone(),
-        engine.params().eip1559_transition,
     );
 
     let manifest = ::snapshot::ManifestData {

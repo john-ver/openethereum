@@ -316,8 +316,7 @@ impl Clique {
                             return Err(BlockError::UnknownParent(last_parent_hash))?;
                         }
                         Some(next) => {
-                            chain
-                                .push_front(next.decode(self.machine.params().eip1559_transition)?);
+                            chain.push_front(next.decode()?);
                         }
                     }
                 }
@@ -333,7 +332,7 @@ impl Clique {
                         None => {
                             return Err(EngineError::CliqueMissingCheckpoint(last_checkpoint_hash))?
                         }
-                        Some(header) => header.decode(self.machine.params().eip1559_transition)?,
+                        Some(header) => header.decode()?,
                     };
 
                 let last_checkpoint_state = match block_state_by_hash.get_mut(&last_checkpoint_hash)

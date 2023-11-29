@@ -1,8 +1,8 @@
 [package]
-description = "OpenEthereum"
-name = "openethereum"
+description = "apM Reward Chain"
+name = "apm-reward-chain"
 # NOTE Make sure to update util/version/Cargo.toml as well
-version = "3.2.6"
+version = "3.2.7"
 license = "GPL-3.0"
 authors = [
 	"OpenEthereum developers",

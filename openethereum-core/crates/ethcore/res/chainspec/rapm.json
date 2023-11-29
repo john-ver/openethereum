@@ -1,6 +1,6 @@
 {
 	"name": "apM Reward Chain",
-    "dataDir": "rapm",
+    "dataDir": "apm-reward-chain",
 	"engine": {
 		"authorityRound": {
 			"params": {

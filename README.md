@@ -9,7 +9,8 @@ Since APMs are fixed assets that are no longer being issued, the RAPM used to re
 
 
 ## Detail Infomation
-- [Build Infomation](./openethereum-core/README.md)
+- [Building - RAPM](./linux-build.md)
+- [Building - OpenETH](./openethereum-core/README.md)
 - [OpenEthereum Wiki](https://openethereum.github.io/)
 - [RAPM Chainspec](./openethereum-core/crates/ethcore/res/chainspec/rapm.json)
 
